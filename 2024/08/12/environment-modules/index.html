@@ -1,0 +1,398 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="format-detection" content="telephone=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><link rel="icon" href="/images/hana.ico?v=2.8.0" type="image/png" sizes="16x16"><link rel="icon" href="/images/hana.ico?v=2.8.0" type="image/png" sizes="32x32"><meta name="description" content="一个简易的超算集群（我也没弄过超大集群）通常由一个管理节点和一些计算节点组成。大部分的软件和库都安装在管理节点上，而计算节点一般只需要安装基本的软件就好了。 一般我们将管理节点上的某个文件夹通过nfs服务分享给计算节点，这里假定为&#x2F;opt文件夹。（nfs服务的配置就不赘述了，网上有很多资料。）注意计算节点挂载这个共享文件夹的路径也要是&#x2F;opt，这样才好统一配置。 我们的目标是把所有的软件和库都安装">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在超算集群上安装Environment Modules">
+<meta property="og:url" content="https://0382.github.io/2024/08/12/environment-modules/index.html">
+<meta property="og:site_name" content="0.382">
+<meta property="og:description" content="一个简易的超算集群（我也没弄过超大集群）通常由一个管理节点和一些计算节点组成。大部分的软件和库都安装在管理节点上，而计算节点一般只需要安装基本的软件就好了。 一般我们将管理节点上的某个文件夹通过nfs服务分享给计算节点，这里假定为&#x2F;opt文件夹。（nfs服务的配置就不赘述了，网上有很多资料。）注意计算节点挂载这个共享文件夹的路径也要是&#x2F;opt，这样才好统一配置。 我们的目标是把所有的软件和库都安装">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-08-12T09:00:08.000Z">
+<meta property="article:modified_time" content="2024-08-12T09:03:40.405Z">
+<meta property="article:author" content="0.382">
+<meta property="article:tag" content="编程">
+<meta property="article:tag" content="program">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="HPC">
+<meta name="twitter:card" content="summary"><title>在超算集群上安装Environment Modules | 0.382</title><link ref="canonical" href="https://0382.github.io/2024/08/12/environment-modules/"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.12.1/css/all.min.css" type="text/css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.css" type="text/css"><link rel="stylesheet" href="/css/index.css?v=2.8.0"><link rel="stylesheet" href="css/custom.css"><script>var Stun = window.Stun || {};
+var CONFIG = {
+  root: '/',
+  algolia: undefined,
+  assistSearch: undefined,
+  fontIcon: {"prompt":{"success":"fas fa-check-circle","info":"fas fa-arrow-circle-right","warning":"fas fa-exclamation-circle","error":"fas fa-times-circle"},"copyBtn":"fas fa-copy"},
+  sidebar: {"offsetTop":"30px","tocMaxDepth":6},
+  header: {"enable":true,"showOnPost":false,"scrollDownIcon":false},
+  postWidget: {"endText":true},
+  nightMode: {"enable":true},
+  back2top: {"enable":true},
+  codeblock: {"style":"default","highlight":"dark","wordWrap":false},
+  reward: false,
+  fancybox: false,
+  zoomImage: {"gapAside":"20px"},
+  galleryWaterfall: undefined,
+  lazyload: false,
+  pjax: undefined,
+  externalLink: undefined,
+  shortcuts: undefined,
+  prompt: {"copyButton":"复制","copySuccess":"复制成功","copyError":"复制失败"},
+  sourcePath: {"js":"js","css":"css","images":"images"},
+};
+
+window.CONFIG = CONFIG;</script><meta name="generator" content="Hexo 7.3.0"></head><body><div class="container" id="container"><header class="header" id="header"><div class="header-inner header-inner--height header-inner--bgcolor"><nav class="header-nav header-nav--sticky"><div class="header-nav-inner"><div class="header-nav-menubtn"><i class="fas fa-bars"></i></div><div class="header-nav-menu"><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/"><span class="header-nav-menu-item__icon"><i class="fas fa-home"></i></span><span class="header-nav-menu-item__text">首页</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/archives/"><span class="header-nav-menu-item__icon"><i class="fas fa-folder-open"></i></span><span class="header-nav-menu-item__text">归档</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/categories/"><span class="header-nav-menu-item__icon"><i class="fas fa-layer-group"></i></span><span class="header-nav-menu-item__text">分类</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/tags/"><span class="header-nav-menu-item__icon"><i class="fas fa-tags"></i></span><span class="header-nav-menu-item__text">标签</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/about/"><span class="header-nav-menu-item__icon"><i class="fas fa-user"></i></span><span class="header-nav-menu-item__text">关于</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/game/"><span class="header-nav-menu-item__icon"><i class="fas fa-gamepad"></i></span><span class="header-nav-menu-item__text">游戏</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/documents/"><span class="header-nav-menu-item__icon"><i class="fas fa-book-open"></i></span><span class="header-nav-menu-item__text">文档</span></a></div></div><div class="header-nav-search"><span class="header-nav-search__icon"><i class="fas fa-search"></i></span><span class="header-nav-search__text">搜索</span></div><div class="header-nav-mode"><div class="mode"><div class="mode-track"><span class="mode-track-moon"></span><span class="mode-track-sun"></span></div><div class="mode-thumb"></div></div></div></div></nav></div></header><main class="main" id="main"><div class="main-inner"><div class="content-wrap" id="content-wrap"><div class="content" id="content"><!-- Just used to judge whether it is an article page--><div id="is-post"></div><div class="post"><header class="post-header"><h1 class="post-title">在超算集群上安装Environment Modules</h1><div class="post-meta"><span class="post-meta-item post-meta-item--createtime"><span class="post-meta-item__icon"><i class="far fa-calendar-plus"></i></span><span class="post-meta-item__info">发表于</span><span class="post-meta-item__value">2024-08-12</span></span><span class="post-meta-item post-meta-item--updatetime"><span class="post-meta-item__icon"><i class="far fa-calendar-check"></i></span><span class="post-meta-item__info">更新于</span><span class="post-meta-item__value">2024-08-12</span></span><span class="post-meta-item post-meta-item--visitors"><span class="post-meta-item__icon"><i class="fas fa-eye"></i></span><span class="post-meta-item__info">阅读次数</span><span class="post-meta-item__value" id="busuanzi_value_page_pv"></span></span></div></header><div class="post-body"><p>一个简易的超算集群（我也没弄过超大集群）通常由一个管理节点和一些计算节点组成。大部分的软件和库都安装在管理节点上，而计算节点一般只需要安装基本的软件就好了。</p>
+<p>一般我们将管理节点上的某个文件夹通过nfs服务分享给计算节点，这里假定为<code>/opt</code>文件夹。（nfs服务的配置就不赘述了，网上有很多资料。）注意计算节点挂载这个共享文件夹的路径也要是<code>/opt</code>，这样才好统一配置。</p>
+<p>我们的目标是把所有的软件和库都安装在管理节点的<code>/opt</code>文件夹下，从而计算节点也自动获取了这些软件和库。所以，超算上的软件最好是源代码安装，不要用包管理器。不过，各个系统最好还是统一系统，并用包管理器统一安装一次<code>gcc</code>，毕竟连<code>gcc</code>都没有实在寸步难行。</p>
+<p>这样安装的好处除了方便，不用做重复劳动之外，还避免了不同的节点安装的软件配置有差别，可能会出问题。</p>
+<span id="more"></span>
+<blockquote>
+<p>以下的安装以Debian为例，其他系统可能会有不同。</p>
+</blockquote>
+
+        <h2 id="modules安装"   >
+          <a href="#modules安装" class="heading-link"><i class="fas fa-link"></i></a><a class="markdownIt-Anchor" href="#modules安装"></a> Modules安装</h2>
+      
+<p>当然，Modules也需要安装在管理节点的<code>/opt</code>文件夹下。从<a target="_blank" rel="noopener" href="https://modules.sourceforge.net/">Modules 官网</a>下载最新的源代码。</p>
+<p>Modules依赖于<code>tcl</code>，所以需要在<strong>每个节点</strong>安装（因为以后需要在每个节点上运行Modules）</p>
+<figure class="highlight bash"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt install tcl-dev</span><br></pre></td></tr></table></div></figure>
+<p>然后编译源代码</p>
+<figure class="highlight bash"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -xzvf modules-5.2.0.tar.gz</span><br><span class="line"><span class="built_in">cd</span> modules-5.2.0</span><br><span class="line">./configure --prefix=/opt/modules/</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></div></figure>
+
+        <h3 id="配置modules的路径"   >
+          <a href="#配置modules的路径" class="heading-link"><i class="fas fa-link"></i></a><a class="markdownIt-Anchor" href="#配置modules的路径"></a> 配置Modules的路径</h3>
+      
+<p>Modules是用于给软件和库配置路径的，但是在这之前要给它自己配置路径。上述安装完成之后，在每一个节点使用命令</p>
+<figure class="highlight bash"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ln</span> -s /opt/modules/init/profile.sh /etc/profile.d/modules.sh</span><br></pre></td></tr></table></div></figure>
+<p>这个<code>init/profile.sh</code>是Modules给你写好的配置路径的脚本，把他链接到自动运行文件夹<code>/etc/profile.d/</code>里面，就完成了配置。</p>
+<p>注意必须在每个节点都要做上述链接。并且，我们后面可能会修改<code>init/profile.sh</code>文件，所以最好使用链接而不是复制。</p>
+
+        <h2 id="配置modulefile文件夹"   >
+          <a href="#配置modulefile文件夹" class="heading-link"><i class="fas fa-link"></i></a><a class="markdownIt-Anchor" href="#配置modulefile文件夹"></a> 配置<code>modulefile</code>文件夹</h2>
+      
+<p>Modules使用modulefile文件来配置某个软件的路径，一般把我们的一些modulefile放在某个文件夹下，然后使用</p>
+<figure class="highlight bash"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">module use module-file-dir</span><br></pre></td></tr></table></div></figure>
+<p>来使用这个文件夹下的的modulefile。为了使其永久生效，可以将其写到<code>init/profile.sh</code>里面去。</p>
+<p>比如，安装<a target="_blank" rel="noopener" href="https://www.intel.cn/content/www/cn/zh/developer/tools/oneapi/toolkits.html">Intel oneAPI</a>，它的默认路径一般是<code>/opt/intel/oneapi/</code>，而安装完成之后，通过运行<code>modulefiles-setup.sh</code>就会自动生成一大堆modulefile，在文件夹<code>/opt/intel/oneapi/modulefiles</code>下。于是你可以在<code>init/profile.sh</code>脚本最后面添加</p>
+<figure class="highlight bash"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">module use /opt/intel/oneapi/modulefiles</span><br></pre></td></tr></table></div></figure>
+
+        <h3 id="编写modulefile"   >
+          <a href="#编写modulefile" class="heading-link"><i class="fas fa-link"></i></a><a class="markdownIt-Anchor" href="#编写modulefile"></a> 编写<code>modulefile</code></h3>
+      
+<p>对于我们自己手动安装的软件和库，需要手写<code>modulefile</code>，一个例子如下</p>
+<figure class="highlight tcl"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#%Module -*- tcl -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">proc</span><span class="title"> ModulesHelp</span> &#123;&#125; &#123;</span><br><span class="line">        <span class="keyword">puts</span> stderr <span class="string">&quot;arpack-ng-3.9.0, compiled with gcc-10.2.1&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">module-whatis <span class="string">&quot;arpack-ng-3.11.0, compiled with gcc-10.2.1&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># load其他模块</span></span><br><span class="line">module <span class="keyword">load</span> lapack/<span class="number">3.11</span><span class="number">.0</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 这里的变量其实和`bash`里面变量是一致的，比如还有`PATH`设置可执行文件路径</span></span><br><span class="line">prepend-path LD_LIBRARY_PATH    /opt/library/arpack-ng<span class="number">-3.9</span><span class="number">.0</span>/lib</span><br><span class="line">prepend-path C_INCLUDE_PATH     /opt/library/arpack-ng<span class="number">-3.9</span><span class="number">.0</span>/include</span><br><span class="line">prepend-path CPLUS_INCLUDE_PATH /opt/library/arpack-ng<span class="number">-3.9</span><span class="number">.0</span>/include</span><br><span class="line">prepend-path PKG_CONFIG_PATH    /opt/library/arpack-ng<span class="number">-3.9</span><span class="number">.0</span>/lib/pkgconfig</span><br></pre></td></tr></table></div></figure>
+<p>更详细的请看文档吧：<a target="_blank" rel="noopener" href="https://modules.readthedocs.io/en/latest/modulefile.html">Environment Modules文档：modulefile</a>。</p>
+<p>以上是针对管理员的安装知识。</p>
+
+        <h2 id="用户的使用指导"   >
+          <a href="#用户的使用指导" class="heading-link"><i class="fas fa-link"></i></a><a class="markdownIt-Anchor" href="#用户的使用指导"></a> 用户的使用指导</h2>
+      
+<p>超算的用户只需要知道以下知识。</p>
+<p>使用<code>module</code>系列命令来引入库。其中</p>
+<ul>
+<li><code>module avail</code>查看可以被引入的库；</li>
+<li><code>module load xxx</code>，引入某库。例如，<code>module load compiler/2023.0.0</code>引入intel的编译器组件；</li>
+<li><code>module list</code>，查看你当前引入了哪些库；</li>
+<li><code>module unload xxx</code>，取消引入某库；</li>
+<li><code>module purge</code>，清空你引入的所有库</li>
+</ul>
+<p>尽管书写正确的modulefile防止冲突是管理员的事情，但是用户最好也不要同时<code>load</code>某个软件的不同版本。</p>
+<p>在使用slurm提交作业时，为了保证在计算节点上的软件环境配制是正确的，你可以有两个选择。你可以使用</p>
+<figure class="highlight bash"><div class="table-container"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#SBATCH --get-user-env</span></span><br></pre></td></tr></table></div></figure>
+<p>来获取当前的环境；或者直接在提交脚本里面写好<code>module load xxx</code>。</p>
+</div><footer class="post-footer"><div class="post-ending ending"><div class="ending__text">------ 本文结束，感谢您的阅读 ------</div></div><div class="post-copyright copyright"><div class="copyright-author"><span class="copyright-author__name">本文作者: </span><span class="copyright-author__value"><a href="https://0382.github.io">0.382</a></span></div><div class="copyright-link"><span class="copyright-link__name">本文链接: </span><span class="copyright-link__value"><a href="https://0382.github.io/2024/08/12/environment-modules/">https://0382.github.io/2024/08/12/environment-modules/</a></span></div><div class="copyright-notice"><span class="copyright-notice__name">版权声明: </span><span class="copyright-notice__value">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" rel="external nofollow" target="_blank">BY-NC-SA</a> 许可协议。转载请注明出处！</span></div></div><div class="post-tags"><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="https://0382.github.io/tags/%E7%BC%96%E7%A8%8B/">编程</a></span><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="https://0382.github.io/tags/program/">program</a></span><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="https://0382.github.io/tags/%E7%AC%94%E8%AE%B0/">笔记</a></span><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="https://0382.github.io/tags/HPC/">HPC</a></span></div><nav class="post-paginator paginator"><div class="paginator-next"><a class="paginator-next__link" href="/2020/10/17/CG-coefficient-and-Wigner-3nj-Symbols/"><span class="paginator-prev__text">How to compute CG coefficient and Wigner 3nj Symbols</span><span class="paginator-next__icon"><i class="fas fa-angle-right"></i></span></a></div></nav></footer></div></div><div class="comments" id="comments"><div id="gitalk-container"></div></div></div><div class="sidebar-wrap" id="sidebar-wrap"><aside class="sidebar" id="sidebar"><div class="sidebar-nav"><span class="sidebar-nav-toc current">文章目录</span><span class="sidebar-nav-ov">站点概览</span></div><section class="sidebar-toc"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#modules%E5%AE%89%E8%A3%85"><span class="toc-number">1.</span> <span class="toc-text">
+           Modules安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AEmodules%E7%9A%84%E8%B7%AF%E5%BE%84"><span class="toc-number">1.1.</span> <span class="toc-text">
+           配置Modules的路径</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AEmodulefile%E6%96%87%E4%BB%B6%E5%A4%B9"><span class="toc-number">2.</span> <span class="toc-text">
+           配置modulefile文件夹</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E5%86%99modulefile"><span class="toc-number">2.1.</span> <span class="toc-text">
+           编写modulefile</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8%E6%88%B7%E7%9A%84%E4%BD%BF%E7%94%A8%E6%8C%87%E5%AF%BC"><span class="toc-number">3.</span> <span class="toc-text">
+           用户的使用指导</span></a></li></ol></section><!-- ov = overview--><section class="sidebar-ov hide"><div class="sidebar-ov-author"><div class="sidebar-ov-author__avatar"><img class="sidebar-ov-author__avatar_img" src="/images/hana.jpg" alt="avatar"></div><p class="sidebar-ov-author__text">芳文社是宇宙的主宰！</p></div><div class="sidebar-ov-social"><a class="sidebar-ov-social-item" href="https://github.com/0382" target="_blank" rel="noopener" data-popover="Github" data-popover-pos="up"><span class="sidebar-ov-social-item__icon"><i class="fab fa-github"></i></span></a><a class="sidebar-ov-social-item" href="https://space.bilibili.com/90129410" target="_blank" rel="noopener" data-popover="social.bilibili" data-popover-pos="up"><span class="sidebar-ov-social-item__icon">Bili</span></a><a class="sidebar-ov-social-item" href="https://www.zhihu.com/people/0-382" target="_blank" rel="noopener" data-popover="知乎" data-popover-pos="up"><span class="sidebar-ov-social-item__icon">知</span></a></div><div class="sidebar-ov-state"><a class="sidebar-ov-state-item sidebar-ov-state-item--posts" href="/archives/"><div class="sidebar-ov-state-item__count">9</div><div class="sidebar-ov-state-item__name">归档</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--categories" href="/categories/"><div class="sidebar-ov-state-item__count">10</div><div class="sidebar-ov-state-item__name">分类</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--tags" href="/tags/"><div class="sidebar-ov-state-item__count">16</div><div class="sidebar-ov-state-item__name">标签</div></a></div><div class="sidebar-ov-cc"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener" data-popover="知识共享许可协议" data-popover-pos="up"><img src="/images/cc-by-nc-sa.svg"></a></div></section><div class="sidebar-reading"><div class="sidebar-reading-info"><span class="sidebar-reading-info__text">你已阅读了 </span><span class="sidebar-reading-info__num">0</span><span class="sidebar-reading-info__perc">%</span></div><div class="sidebar-reading-line"></div></div></aside></div><div class="clearfix"></div></div></main><footer class="footer" id="footer"><div class="footer-inner"><div><span>Copyright © 2024</span><span class="footer__devider"></span><span>0.382</span></div><div class="busuanzi"><span class="busuanzi-siteuv"><span class="busuanzi-siteuv__icon"><i class="fas fa-user"></i></span><span class="busuanzi-siteuv__info">访问人数</span><span class="busuanzi-siteuv__value" id="busuanzi_value_site_uv"></span></span><span class="busuanzi-sitepv"><span class="busuanzi-siteuv__icon"><i class="fas fa-eye"></i></span><span class="busuanzi-siteuv__info">浏览总量</span><span class="busuanzi-siteuv__value" id="busuanzi_value_site_pv"></span></span></div></div></footer><div class="loading-bar" id="loading-bar"><div class="loading-bar__progress"></div></div><div class="back2top" id="back2top"><span class="back2top__icon"><i class="fas fa-rocket"></i></span></div></div><div class="search-mask"></div><div class="search-popup"><span class="search-close"></span><div class="search-input"><input placeholder="搜索文章（支持多关键词，请用空格分隔）"></div><div class="search-results"></div></div><script src="https://cdn.jsdelivr.net/npm/jquery@v3.4.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.ui.min.js"></script><script>function initSearch() {
+  var isXML = true;
+  var search_path = 'search.json';
+
+  if (!search_path) {
+    search_path = 'search.xml';
+  } else if (/json$/i.test(search_path)) {
+    isXML = false;
+  }
+
+  var path = '/' + search_path;
+  $.ajax({
+    url: path,
+    dataType: isXML ? 'xml' : 'json',
+    async: true,
+    success: function (res) {
+      var datas = isXML ? $('entry', res).map(function () {
+        // 将 XML 转为 JSON
+        return {
+          title: $('title', this).text(),
+          content: $('content', this).text(),
+          url: $('url', this).text()
+        };
+      }).get() : res;
+      var $input = $('.search-input input');
+      var $result = $('.search-results');
+      // 搜索对象（标题、内容）的权重，影响显示顺序
+      var WEIGHT = { title: 100, content: 1 };
+      var searchPost = function () {
+        var searchText = $input.val().toLowerCase().trim();
+        // 根据空白字符分隔关键字
+        var keywords = searchText.split(/[\s]+/);
+        // 搜索结果
+        var matchPosts = [];
+
+        // 有多个关键字时，将原文字整个保存下来
+        if (keywords.length > 1) {
+          keywords.push(searchText);
+        }
+        // 防止未输入字符时搜索
+        if (searchText.length > 0) {
+          datas.forEach(function (data) {
+            var isMatch  = false;
+            // 没有标题的文章使用预设的 i18n 变量代替
+            var title = (data.title && data.title.trim()) || '[ 文章无标题 ]';
+            var titleLower = title && title.toLowerCase();
+            // 删除 HTML 标签 和 所有空白字符
+            var content = data.content && data.content.replace(/<[^>]+>/g, '');
+            var contentLower = content && content.toLowerCase();
+            // 删除重复的 /
+            var postURL = data.url && decodeURI(data.url).replace(/\/{2,}/g, '/');
+            // 标题中匹配到的关键词
+            var titleHitSlice = [];
+            // 内容中匹配到的关键词
+            var contentHitSlice = [];
+
+            keywords.forEach(function (keyword) {
+              /**
+              * 获取匹配的关键词的索引
+              * @param {String} keyword 要匹配的关键字
+              * @param {String} text 原文字
+              * @param {Boolean} caseSensitive 是否区分大小写
+              * @param {Number} weight 匹配对象的权重。权重大的优先显示
+              * @return {Array}
+              */
+              function getIndexByword (word, text, caseSensitive, weight) {
+                if (!word || !text) {
+                  return [];
+                };
+
+                var startIndex = 0; // 每次匹配的开始索引
+                var index = -1;     // 匹配到的索引值
+                var result = [];    // 匹配结果
+
+                if (!caseSensitive) {
+                  word = word.toLowerCase();
+                  text = text.toLowerCase();
+                }
+
+                while((index = text.indexOf(word, startIndex)) !== -1) {
+                  var hasMatch = false;
+                  // 索引位置相同的关键词，保留长度较长的
+                  titleHitSlice.forEach(function (hit) {
+                    if (hit.index === index && hit.word.length < word.length) {
+                      hit.word = word;
+                      hasMatch = true;
+                    }
+                  });
+                  startIndex = index + word.length;
+                  !hasMatch && result.push({ index: index, word: word, weight: weight });
+                }
+                return result;
+              }
+              titleHitSlice = titleHitSlice.concat(getIndexByword(keyword, titleLower, false, WEIGHT.title));
+              contentHitSlice = contentHitSlice.concat(getIndexByword(keyword, contentLower, false, WEIGHT.content));
+            });
+
+            var hitTitle = titleHitSlice.length;
+            var hitContent = contentHitSlice.length;
+
+            if (hitTitle > 0 || hitContent > 0) {
+              isMatch = true;
+            }
+            if (isMatch) {
+              ;[titleHitSlice, contentHitSlice].forEach(function (hit) {
+                // 按照匹配文字的索引的递增顺序排序
+                hit.sort(function (left, right) {
+                  return left.index - right.index;
+                });
+              });
+              /**
+              * 给文本中匹配到的关键词添加标记，从而进行高亮显示
+              * @param {String} text 原文本
+              * @param {Array} hitSlice 匹配项的索引信息
+              * @param {Number} start 开始索引
+              * @param {Number} end 结束索引
+              * @return {String}
+              */
+              function highlightKeyword (text, hitSlice, start, end) {
+                if (!text || !hitSlice || !hitSlice.length) {
+                  return;
+                }
+
+                var result = '';
+                var startIndex = start;
+                var endIndex = end;
+                hitSlice.forEach(function (hit) {
+                  if (hit.index < startIndex) {
+                    return;
+                  }
+
+                  var hitWordEnd = hit.index + hit.word.length;
+                  result += text.slice(startIndex, hit.index);
+                  result += '<b>' + text.slice(hit.index, hitWordEnd) + '</b>';
+                  startIndex = hitWordEnd;
+                });
+                result += text.slice(startIndex, endIndex);
+                return result;
+              }
+
+              var postData = {};
+              // 文章总的搜索权重
+              var postWeight = titleHitSlice.length * WEIGHT.title + contentHitSlice.length * WEIGHT.content;
+              // 标记匹配关键词后的标题
+              var postTitle = highlightKeyword(title, titleHitSlice, 0, title.length) || title;
+              // 标记匹配关键词后的内容
+              var postContent;
+              // 显示内容的长度
+              var SHOW_WORD_LENGTH = 200;
+              // 命中关键词前的字符显示长度
+              var SHOW_WORD_FRONT_LENGTH = 20;
+              var SHOW_WORD_END_LENGTH = SHOW_WORD_LENGTH - SHOW_WORD_FRONT_LENGTH;
+
+              // 截取匹配的第一个字符，前后共 200 个字符来显示
+              if (contentHitSlice.length > 0) {
+                var firstIndex = contentHitSlice[0].index;
+                var start = firstIndex > SHOW_WORD_FRONT_LENGTH ? firstIndex - SHOW_WORD_FRONT_LENGTH : 0;
+                var end = firstIndex + SHOW_WORD_END_LENGTH;
+                postContent = highlightKeyword(content, contentHitSlice, start, end);
+              } else { // 未匹配到内容，直接截取前 200 个字符来显示
+                postContent = content.slice(0, SHOW_WORD_LENGTH);
+              }
+              postData.title = postTitle;
+              postData.content = postContent;
+              postData.url = postURL;
+              postData.weight = postWeight;
+              matchPosts.push(postData);
+            }
+          });
+        }
+
+        var resultInnerHtml = '';
+        if (matchPosts.length) {
+          // 按权重递增的顺序排序，使权重大的优先显示
+          matchPosts.sort(function (left, right) {
+            return right.weight - left.weight;
+          });
+          resultInnerHtml += '<ul>';
+          matchPosts.forEach(function (post) {
+            resultInnerHtml += '<li><a class="search-results-title" href="' + post.url + '">';
+            resultInnerHtml += post.title;
+            resultInnerHtml += '</a><div class="search-results-content">';
+            resultInnerHtml += post.content;
+            resultInnerHtml += '</div></li>';
+          });
+          resultInnerHtml += '</ul>';
+        } else {
+          resultInnerHtml += '<div class="search-results-none"><i class="far fa-meh"></i></div>';
+        }
+        $result.html(resultInnerHtml);
+      };
+      $input.on('input', searchPost);
+      $input.on('keyup', function (e) {
+        if (e.keyCode === Stun.utils.codeToKeyCode('Enter')) {
+          searchPost();
+        }
+      });
+    }
+  });
+}
+
+function closeSearch () {
+  $('body').css({ overflow: 'auto' });
+  $('.search-popup').css({ display: 'none' });
+  $('.search-mask').css({ display: 'none' });
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+  Stun.utils.pjaxReloadLocalSearch = function () {
+    $('.header-nav-search').on('click', function (e) {
+      e.stopPropagation();
+      $('body').css('overflow', 'hidden');
+      $('.search-popup')
+        .velocity('stop')
+        .velocity('transition.expandIn', {
+          duration: 300,
+          complete: function () {
+            $('.search-popup input').focus();
+          }
+        });
+      $('.search-mask')
+        .velocity('stop')
+        .velocity('transition.fadeIn', {
+          duration: 300
+        });
+
+      initSearch();
+    });
+    $('.search-mask, .search-close').on('click', function () {
+      closeSearch();
+    });
+    $(document).on('keydown', function (e) {
+      // Escape <=> 27
+      if (e.keyCode === Stun.utils.codeToKeyCode('Escape')) {
+        closeSearch();
+      }
+    });
+  };
+
+  Stun.utils.pjaxReloadLocalSearch();
+}, false);
+
+function safeOpenUrl(url) {
+  var newTab = window.open();
+  newTab.opener = null;
+  newTab.location = url;
+}
+
+function extSearch(engine) {
+  var engines = {
+    google: 'https://www.google.com/search?q=',
+    bing: 'https://cn.bing.com/search?q=',
+    baidu: 'https://www.baidu.com/s?ie=UTF-8&wd=',
+  };
+  var host = window.location.host;
+  var query = $('.search-input input').val().toLowerCase().trim();
+  var uri = engines[engine] + query + ' site:' + host;
+
+  if (query) {
+    safeOpenUrl(uri);
+  } else {
+    Stun.utils.popAlert('warning', '请输入字符');
+  }
+}
+
+var assistSearchList = window.CONFIG.assistSearch;
+
+if (Array.isArray(assistSearchList)) {
+  assistSearchList.forEach(function (name) {
+    document.querySelector('.search-btns-item--' + name).addEventListener('click', function () {
+      extSearch(name);
+    }, false);
+  });
+}</script><script src="https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@latest/bsz.pure.mini.js" async></script><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script><script src="https://cdn.jsdelivr.net/npm/js-md5@latest/src/md5.min.js"></script><script>function loadGitalk () {
+  if (!document.getElementById('gitalk-container')) {
+    return;
+  }
+
+  var gitalk = new Gitalk({
+    id: md5(window.location.pathname.slice(1)),
+    clientID: '73acb4beef6f55d41a9d',
+    clientSecret: '154f5f75bcf36a72f4d8df04691591a2129796e1',
+    repo: '0382.github.io',
+    owner: '0382',
+    admin: ['0382'],
+    distractionFreeMode: 'true',
+    language: 'zh-CN'
+  });
+  gitalk.render('gitalk-container');
+}
+
+if (false) {
+  loadGitalk();
+} else {
+  window.addEventListener('DOMContentLoaded', loadGitalk, false);
+}</script><script src="/js/utils.js?v=2.8.0"></script><script src="/js/stun-boot.js?v=2.8.0"></script><script src="/js/scroll.js?v=2.8.0"></script><script src="/js/header.js?v=2.8.0"></script><script src="/js/sidebar.js?v=2.8.0"></script><script type="application/json" src="/search.json"></script></body></html>
